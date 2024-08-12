@@ -1,0 +1,235 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Web lỏ</title>
+    <!-- Các thẻ meta, tiêu đề, CSS khác -->
+    <link rel="icon" href="https://scontent.fhan14-2.fna.fbcdn.net/v/t39.30808-6/412685968_1517954905711520_3316607638584780335_n.jpg?stp=cp6_dst-jpg&_nc_cat=100&ccb=1-7&_nc_sid=833d8c&_nc_eui2=AeGBzCTfZUwiLlgZGkyF7R3iz3jS9iVvTCbPeNL2JW9MJt27ZmZe7Xgzfb6cktwq4ONTWYU4Wnr8pERjZgkLfXKT&_nc_ohc=vK9jjFu9CHIQ7kNvgEhKaLR&_nc_ht=scontent.fhan14-2.fna&oh=00_AYBJ-RcMUfpRAQg5vd50kbiIb4NOq6yrFF8FOtCbxvELWA&oe=66BE3903" type="image/x-icon">
+    <title>Your Website Title</title>
+    <style>
+        body {
+            font-family: 'Roboto', sans-serif;
+            margin: 0;
+            padding: 0;
+            background-color: #1e1e1e;
+            color: #e0e0e0;
+        }
+        h1 {
+            text-align: center;
+            color: #00bcd4;
+            margin-top: 20px;
+        }
+        #button-container, #chart-container, #table-container {
+            margin: 20px;
+        }
+        button {
+            background-color: #e35db9; /* Màu nền */
+            border: none; /* Không viền */
+            color: rgb(250, 241, 241); /* Màu chữ */
+            padding: 12px 24px; /* Khoảng cách bên trong */
+            text-align: center; /* Canh giữa chữ */
+            text-decoration: none; /* Không gạch chân */
+            display: inline-block; /* Hiển thị dạng khối */
+            font-size: 16px; /* Cỡ chữ */
+            margin: 6px 3px; /* Khoảng cách bên ngoài */
+            cursor: pointer; /* Con trỏ chuột */
+            border-radius: 6px; /* Bo tròn góc */
+            transition: background-color 0.3s ease, transform 0.2s ease; /* Hiệu ứng chuyển màu và hiệu ứng nhấn */
+        }
+        button:hover {
+            background-color: #e64a19; /* Màu nền khi hover */
+        }
+        button:active {
+            background-color: #d84315; /* Màu nền khi nhấn */
+            transform: scale(0.98); /* Hiệu ứng nhấn */
+        }
+        #button-container {
+            width: 100%;
+            text-align: center;
+        }
+        #chart-container {
+            width: 100%;
+            margin-top: 20px;
+        }
+        #myChart {
+            max-width: 100%; /* Chiều rộng tối đa */
+            max-height: 500px; /* Chiều cao tối đa */
+        }
+        #table-container {
+            width: 100%;
+            margin-top: 20px;
+            overflow-x: auto;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            background-color: #2c2c2c; /* Màu nền của bảng */
+            border-radius: 8px; /* Bo tròn góc bảng */
+            box-shadow: 0 6px 12px rgba(0, 0, 0, 0.3); /* Đổ bóng bảng */
+        }
+        th, td {
+            padding: 14px;
+            text-align: left;
+        }
+        th {
+            background-color: #00bcd4;
+            color: white;
+            border-bottom: 3px solid #008ba3;
+        }
+        td {
+            border-bottom: 1px solid #f0f0f0;
+        }
+        tr:nth-child(even) {
+            background-color: #09625b;
+        }
+        tr:hover {
+            background-color: #69b413;
+        }
+        .status {
+            font-size: 18px; /* Cỡ chữ */
+            margin-top: 10px; /* Khoảng cách trên */
+            padding: 10px;
+            border-radius: 8px; /* Bo tròn góc */
+            font-weight: bold; /* Chữ đậm */
+            display: inline-block;
+        }
+        .status.on {
+            color: #4caf50; /* Màu chữ khi LED bật */
+            background-color: #e8f5e9; /* Màu nền khi LED bật */
+        }
+        .status.off {
+            color: #f44336; /* Màu chữ khi LED tắt */
+            background-color: #ffebee; /* Màu nền khi LED tắt */
+        }
+    </style>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</head>
+<body>
+    <h1>Thông tin cảm biến DHT11</h1>
+    <div id="button-container">
+        <h2>Điều khiển LED</h2>
+        <button onclick="updateLED(1)">Bật LED</button>
+        <button onclick="updateLED(0)">Tắt LED</button>
+        <div class="status" id="led-status">LED status: Unknown</div>
+    </div>
+    <div id="chart-container">
+        <canvas id="myChart"></canvas>
+    </div>
+    <div id="table-container">
+        <table id="data-table">
+            <tr>
+                <th>Thời gian</th>
+                <th>Temp</th>
+                <th>Humi</th>
+            </tr>
+        </table>
+    </div>
+
+    <script>
+        function fetchData() {
+            fetch('/data')
+                .then(response => response.json())
+                .then(data => {
+                    updateTable(data);
+                    updateChart(data);
+                })
+                .catch(error => console.error('Error fetching data:', error));
+        }
+
+        function updateTable(data) {
+            const table = document.getElementById('data-table');
+            table.innerHTML = `
+                <tr>
+                    <th>Thời gian</th>
+                    <th>Temp</th>
+                    <th>Humi</th>
+                </tr>
+            `;
+            data.forEach(row => {
+                const tr = document.createElement('tr');
+                tr.innerHTML = `
+                    <td>${row.time}</td>
+                    <td>${row.nhietdo}</td>
+                    <td>${row.doam}</td>
+                `;
+                table.appendChild(tr);
+            });
+        }
+
+        function updateChart(data) {
+            const labels = data.map(row => row.time); // Cập nhật theo định dạng thời gian nếu có
+            const tempData = data.map(row => row.nhietdo);
+            const humiData = data.map(row => row.doam);
+
+            const ctx = document.getElementById('myChart').getContext('2d');
+            new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: labels,
+                    datasets: [
+                        {
+                            label: 'Nhiệt độ',
+                            data: tempData,
+                            borderColor: 'rgba(75, 192, 192, 1)',
+                            borderWidth: 2,
+                            fill: false
+                        },
+                        {
+                            label: 'Độ ẩm',
+                            data: humiData,
+                            borderColor: 'rgba(153, 102, 255, 1)',
+                            borderWidth: 2,
+                            fill: false
+                        }
+                    ]
+                },
+                options: {
+                    scales: {
+                        x: {
+                            beginAtZero: true,
+                            ticks: {
+                                color: '#e0e0e0'
+                            },
+                            grid: {
+                                color: '#444'
+                            }
+                        },
+                        y: {
+                            beginAtZero: true,
+                            ticks: {
+                                color: '#e0e0e0'
+                            },
+                            grid: {
+                                color: '#444'
+                            }
+                        }
+                    }
+                }
+            });
+        }
+
+        function updateLED(state) {
+            fetch(`/led?state=${state}`, { method: 'POST' })
+                .then(response => response.text())
+                .then(status => {
+                    const ledStatusElement = document.getElementById('led-status');
+                    if (state === 1) {
+                        ledStatusElement.innerText = `LED status: On`;
+                        ledStatusElement.classList.add('on');
+                        ledStatusElement.classList.remove('off');
+                    } else {
+                        ledStatusElement.innerText = `LED status: Off`;
+                        ledStatusElement.classList.add('off');
+                        ledStatusElement.classList.remove('on');
+                    }
+                })
+                .catch(error => console.error('Error updating LED:', error));
+        }
+
+        // Fetch data initially and set interval to refresh data
+        fetchData();
+        setInterval(fetchData, 10000); // Refresh data every 10 seconds
+    </script>
+</body>
+</html>
